@@ -132,4 +132,34 @@ export default class UserController{
             res.status(StatusCode.BadGateway).json({success:false,message:error})
         }
     }
+    forgotPassword = async(req:Request,res:Response,next:NextFunction)=>{
+        try {
+            const operation = 'forgot-password'
+            const response:any = await UserRabbitMQClient.produce(req.body,operation);
+            const result = JSON.parse(response.content.toString());
+            res.status(StatusCode.Created).json(result);
+        } catch (error) {
+            res.status(StatusCode.BadGateway).json({success:false,message:error})
+        }
+    }
+    verifyResetCode = async(req:Request,res:Response,next:NextFunction)=>{
+        try {
+            const operation = "verify-reset-code"
+            const response:any = await UserRabbitMQClient.produce(req.body,operation);
+            const result = JSON.parse(response.content.toString());
+            res.status(StatusCode.Created).json(result)
+        } catch (error) {
+            res.status(StatusCode.BadGateway).json({success:false,message:error})
+        }
+    }
+    resetPassword = async(req:Request,res:Response,next:NextFunction)=>{
+        try {
+            const operation = "reset-password"
+            const response:any = await UserRabbitMQClient.produce(req.body,operation);
+            const result = JSON.parse(response.content.toString());
+            res.status(StatusCode.Created).json(result)
+        } catch (error) {
+            res.status(StatusCode.BadGateway).json({success:false,message:error})
+        }
+    }
 }

@@ -19,6 +19,9 @@ userRoute.post('/logout',controller.logout);
 userRoute.patch('/update-user-info',isValidated,controller.updateUserInfo);
 userRoute.patch('/update-user-password',isValidated,controller.updateUserPassword);
 userRoute.post('/update-user-avatar', isValidated, upload.single('avatar'), controller.updateUserAvatar)
+userRoute.post('/forgot-password',controller.forgotPassword);
+userRoute.post('/verify-reset-code',controller.verifyResetCode);
+userRoute.post('/reset-password',controller.resetPassword)
 
 
 export default userRoute;
