@@ -3,6 +3,7 @@ import { CustomRequest } from "../interfaces/IRequest";
 import InstructorRabbitMQClient from "./rabbitMQ/client";
 import "dotenv/config";
 import { StatusCode } from "../../interface/enum";
+import UserRabbitMQClient from '../user/rabbitMQ/client';
 
 export default class instructorController {
   register = async (req: CustomRequest, res: Response, next: NextFunction) => {
@@ -26,14 +27,22 @@ export default class instructorController {
         data,
         operation
       );
-      const user = {
-        avatar: response.avatar,
-        name: response.name,
-        email: response.email,
-        isVerified: response.isVerified,
-        role: "instructor",
-      };
-      res.status(StatusCode.Created).json(user);
+
+      const userRoleData = {
+        userId:req.userId,
+        newRole:"instructor"
+      }
+
+      const operation2 = 'update-user-role';
+
+      const roleUpdateResponse:any = await UserRabbitMQClient.produce(userRoleData,operation2);
+
+      if(roleUpdateResponse.success){
+        res.status(StatusCode.Created).json({
+          message:"Instructor registered and user role updated successfully",
+          instructorResponse : response,
+        });
+      }
     } catch (e: any) {
       next(e);
     }
