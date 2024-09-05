@@ -1,5 +1,5 @@
 import { Channel } from "amqplib";
-import rabbitmqConfig from "../../config/rabbiMQ.config";
+import rabbitmqConfig from "../../../config/rabbiMQ.config";
 import { randomUUID } from "crypto";
 import EventEmitter from "events";
 

@@ -9,7 +9,9 @@ export default{
             authQueue:"auth_queue",
             notificationQueue:"notification_queue",
             instructorQueue:"instructor_queue",
-            adminQueue:"admin_queue"
+            adminQueue:"admin_queue",
+            courseQueue:"course_queue",
+            orderQueue:"order_queue"
          }
     }
 }

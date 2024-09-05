@@ -9,7 +9,7 @@ export default class Consumer {
   ) {}
 
   async consumeMessages() {
-    console.log("Ready to consume course messages...");
+    console.log("Ready to consume messages...");
 
     this.channel.consume(
       this.replyQueueName,

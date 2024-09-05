@@ -6,6 +6,9 @@ import Consumer from "./consumer";
 
 
 class RabbitMQClient{
+    getUser(arg0: { id: any; }, p0: (error: any, result: any) => void) {
+        throw new Error("Method not implemented.");
+    }
     private constructor(){}
     private static instance:RabbitMQClient;
     private isInitialized = false;

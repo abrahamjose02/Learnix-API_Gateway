@@ -24,15 +24,19 @@ export default class Producer {
         },
       }
     );
- 
+
     return new Promise((res, rej) => {
-        this.eventEmitter.once(uuid, async (data) => {
-            const reply = JSON.parse(data.content.toString())
-            const jsonString = Buffer.from(reply.data).toString('utf-8');
-            const replyObject = JSON.parse(jsonString);
-            console.log(replyObject);
-            res(replyObject);
-        })
-    })
-  }
+      this.eventEmitter.once(uuid, async (message) => {
+        try {
+          
+          const reply = JSON.parse(message.content.toString());
+          console.log("Reply received:", reply);
+          res(reply);
+        } catch (err) {
+          console.error("Error processing message:", err);
+          rej(new Error("Failed to process reply message"));
+        }
+      });
+});
+}
 }

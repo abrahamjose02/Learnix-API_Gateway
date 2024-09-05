@@ -15,6 +15,12 @@ export default class UserController{
             console.log(operation);
             const response:any = await UserRabbitMQClient.produce(req.body,operation);
             const result = JSON.parse(response.content.toString());
+            if(!result.success){
+                res
+                .status(StatusCode.BadRequest)
+                .json({ success: false, message: result.message });
+              return;
+            }
             res.status(StatusCode.Created).json(result);
         } catch (error) {
             res.status(StatusCode.BadGateway).json({message:error})
@@ -26,6 +32,12 @@ export default class UserController{
             console.log('Request body',req.body)
             const response:any = await UserRabbitMQClient.produce(req.body,operation);
             const result = JSON.parse(response.content.toString());
+            if (!result.success) {
+                res
+                  .status(StatusCode.BadRequest)
+                  .json({ success: false, message: result.message });
+                return;
+              }    
             res.status(StatusCode.Accepted).json(result)
         } catch (error) {
             res.status(StatusCode.BadGateway).json({message:error})
@@ -36,6 +48,13 @@ export default class UserController{
              const operation = "login";
              const response:any = await UserRabbitMQClient.produce(req.body,operation)
              const result = JSON.parse(response.content.toString());
+             console.log(result)
+             if (!result || !result.accessToken || !result.refreshToken) {
+                res
+                  .status(StatusCode.BadRequest)
+                  .json({ success: false, message: result.message });
+                return;
+              }        
              const options = generateTokenOptions();
              res.cookie('refreshToken',result?.refreshToken,options.refreshTokenOptions);
              res.cookie('accessToken',result?.accessToken,options.accessTokenOptions);
@@ -44,40 +63,76 @@ export default class UserController{
             res.status(StatusCode.BadGateway).json({success:false,message:error})
         }
     }
-    logout = async(req:Request,res:Response,next:NextFunction)=>{
+    logout = (req: Request, res: Response, next: NextFunction) => {
         try {
-            res.cookie("accessToken","",{maxAge:1});
-            res.cookie("refreshToken","",{maxAge:1});
-            const cookies = req.cookies;
-            for(let cookieName in cookies){
-                res.clearCookie(cookieName)
-            }
-            res.status(StatusCode.Ok).json({success:true,message:"Logged out successfully"})
-        } catch (error:any) {
-            res.status(StatusCode.BadGateway).json({success:false,message:error})
+          res.cookie("accessToken", "", {
+            maxAge: 1,
+            httpOnly: true,
+            sameSite: "none",
+            secure: true,
+          });
+          res.cookie("refreshToken", "", {
+            maxAge: 1,
+            httpOnly: true,
+            sameSite: "none",
+            secure: true,
+          });
+          const cookies = req.cookies;
+          for (const cookieName in cookies) {
+            res.clearCookie(cookieName);
+          }
+          res
+            .status(StatusCode.Ok)
+            .json({ success: true, message: "Logged out successfully" });
+        } catch (e: any) {
+          next(e);
         }
-    }
-    getUser = async(req:Request,res:Response,next:NextFunction)=>{
+      };
+    
+    getUser = async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const authOperation = 'is-authenticated';
-            const authResponse:any = await AuthRabbitMQClient.produce(
-                {token:req.cookies?.accessToken},authOperation
-            );
-            const authResult = JSON.parse(authResponse.content.toString());
-            const userId = authResult.userId
-
-            const userOperation = 'get-user';
-            const userResponse:any = await UserRabbitMQClient.produce({id:userId},userOperation);
-            const userResult = JSON.parse(userResponse.content.toString());
-            
-            res.status(StatusCode.Ok).json({user:userResult});
-        } catch (error) {
-            res.status(StatusCode.BadGateway).json({success:false,message:error})
-        }
+          const token = req.cookies?.accessToken;
+    
+          if (!token) {
+            res
+              .status(StatusCode.Unauthorized)
+              .json({ success: false, message: "No access token provided." });
+            return;
+          }
+    
+          const authResponse: any = await AuthRabbitMQClient.produce(
+            { token },
+            "is-authenticated"
+          );
+    
+          const authResult = JSON.parse(authResponse.content.toString());
+    
+          if (!authResult || !authResult.userId) {
+            res.status(StatusCode.BadRequest).json({
+              success: false,
+              message: "User ID not found in authentication result.",
+            });
+            return;
+          }
+    
+          const userResponse: any = await UserRabbitMQClient.produce(
+            { id: authResult.userId },
+            "get-user"
+          );
+    
+          const userResult = JSON.parse(userResponse.content.toString());
+    
+          res.status(StatusCode.Ok).json({ success: true, user: userResult });
+        } catch (e: any) {
+          res
+            .status(StatusCode.InternalServerError)
+            .json({ success: false, message: "Internal Server Error" });
     }
+   };
     socialAuth = async(req:Request,res:Response,next:NextFunction)=>{
         try {
             const{email,name,avatar} = req.body;
+            console.log("req.body",req.body)
             const operation = 'social-auth';
             const response:any = await UserRabbitMQClient.produce({name,email,avatar},operation);
             const result = JSON.parse(response.content.toString());
@@ -137,6 +192,12 @@ export default class UserController{
             const operation = 'forgot-password'
             const response:any = await UserRabbitMQClient.produce(req.body,operation);
             const result = JSON.parse(response.content.toString());
+            if (!result.success) {
+                res
+                  .status(StatusCode.BadRequest)
+                  .json({ success: false, message: result.message });
+                return;
+              }  
             res.status(StatusCode.Created).json(result);
         } catch (error) {
             res.status(StatusCode.BadGateway).json({success:false,message:error})
@@ -147,7 +208,13 @@ export default class UserController{
             const operation = "verify-reset-code"
             const response:any = await UserRabbitMQClient.produce(req.body,operation);
             const result = JSON.parse(response.content.toString());
-            res.status(StatusCode.Created).json(result)
+            if (!result.success) {
+                res
+                  .status(StatusCode.BadRequest)
+                  .json({ success: false, message: result.message });
+                return;
+              }    
+           return res.status(StatusCode.Created).json(result)
         } catch (error) {
             res.status(StatusCode.BadGateway).json({success:false,message:error})
         }

@@ -5,26 +5,64 @@ import { StatusCode } from "../../interface/enum";
 import AuthRabbitMQClient from './rabbitMQ/client';
 import AsyncHanlder from "express-async-handler";
 import { generateTokenOptions } from "../../utils/generateTokenOptions";
-
+import UserRabbitMQClient from '../user/rabbitMQ/client'
 
 export const isValidated = AsyncHanlder(
-    async(req:CustomRequest,res:Response,next:NextFunction):Promise<any>=>{
-        try {
-            const token = req.cookies?.accessToken;
-            if(!token){
-               return res.status(StatusCode.Unauthorized).json({success:false,message:"Token is missing"});
-            }
-            const operation = "is-authenticated";
-            const response:any = await AuthRabbitMQClient.produce({token},operation);
-            const result = JSON.parse(response.content.toString());
-            req.userId=result.userId;
-            req.role = result.role;
-            next();
-        } catch (err) {
-            res.status(StatusCode.Unauthorized).json({success:false,message:err})
+    async (req: CustomRequest, res: Response, next: NextFunction) => {
+      const token = req.cookies?.accessToken;
+  
+      try {
+        const response: any = await AuthRabbitMQClient.produce(
+          { token },
+          "is-authenticated"
+        );
+        const result = JSON.parse(response.content.toString());
+  
+        if (!result || !result.userId) {
+          res
+            .status(StatusCode.Unauthorized)
+            .json({ success: false, message: "Unauthorized" });
+          return;
         }
-    }
-)
+  
+        const operation = "get-user";
+        const id = result.userId;
+        const userResponse: any = await UserRabbitMQClient.produce(
+          { id },
+          operation
+        );
+        const user = JSON.parse(userResponse.content.toString());
+        if (user.isBlocked) {
+          
+          res.cookie("accessToken", "", {
+            maxAge: 1,
+            httpOnly: true,
+            sameSite: "none",
+            secure: true,
+          });
+          res.cookie("refreshToken", "", {
+            maxAge: 1,
+            httpOnly: true,
+            sameSite: "none",
+            secure: true,
+          });
+  
+          res
+            .status(StatusCode.Forbidden)
+            .json({ success: false, message: "User is blocked and logged out!" });
+          return;
+        }
+        req.userId = result.userId;
+        req.role = result.role;
+        next();
+      } catch (err: any) {
+        res
+          .status(StatusCode.Unauthorized)
+          .json({ success: false, message: err.message });
+   }
+ }
+  );
+  
 
 export const authorizeRoles = (...roles:UserRole[])=>{
     return AsyncHanlder(
@@ -57,6 +95,14 @@ export const refreshToken = AsyncHanlder(
             const operation = 'refresh-token';
             const response:any = await AuthRabbitMQClient.produce({token},operation);
             const result = JSON.parse(response.content.toString());
+            // if(req.role !== 'admin'){
+            //     const userOperation = 'get-user';
+            // const userResponse: any = await UserRabbitMQClient.produce({ userId: result.userId }, userOperation);
+            // const userResult = JSON.parse(userResponse.content.toString());
+            // if (userResult.isBlocked) {
+            //     return res.status(StatusCode.Forbidden).json({ success: false, message: "User is blocked" });
+            // }
+            // }
             const options = generateTokenOptions()
             res.cookie('accessToken',result.accessToken,options.accessTokenOptions);
             res.cookie('refreshToken',result.refreshToken,options.refreshTokenOptions);

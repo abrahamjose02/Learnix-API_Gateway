@@ -1,5 +1,6 @@
 import { Channel, Connection, connect } from "amqplib";
-import rabbitmqConfig from "../../config/rabbiMQ.config";
+import rabbitmqConfig from "../../../config/rabbiMQ.config";
+
 import Producer from "./producer";
 import { EventEmitter } from 'events'
 import Consumer from "./consumer";

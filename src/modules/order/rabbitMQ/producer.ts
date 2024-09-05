@@ -1,5 +1,5 @@
 import { Channel } from "amqplib";
-import rabbitmqConfig from "../../config/rabbiMQ.config";
+import rabbitmqConfig from "../../../config/rabbiMQ.config";
 import { randomUUID } from "crypto";
 import EventEmitter from "events";
 
@@ -13,7 +13,7 @@ export default class Producer {
   async produceMessages(data: any, operation: string) {
     const uuid = randomUUID();
     this.channel.sendToQueue(
-      rabbitmqConfig.rabbitMQ.queues.courseQueue,
+      rabbitmqConfig.rabbitMQ.queues.orderQueue,
       Buffer.from(JSON.stringify(data)),
       {
         replyTo: this.replyQueueName,
@@ -24,11 +24,17 @@ export default class Producer {
         },
       }
     );
-
+ 
     return new Promise((res, rej) => {
-      this.eventEmitter.once(uuid, async (data) => {
-        res(data);
+      this.eventEmitter.once(uuid, async (reply) => {
+        try {
+          const replyDataString = Buffer.from(reply.content).toString('utf-8');
+          const replyObject = JSON.parse(replyDataString);
+          res(replyObject);
+        } catch (error) {
+          rej(error);
+        }
       });
-    });
+    })
   }
 }
