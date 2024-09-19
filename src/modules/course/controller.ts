@@ -104,7 +104,7 @@ updateCourse = async (
       const randomName = (bytes = 32) =>
         crypto.randomBytes(bytes).toString("hex");
       const bucketName = process.env.S3_BUCKET_NAME || "";
-      const imageName = `eduwise-course-thumbnail/${randomName()}`;
+      const imageName = `learnix-course-thumbnail/${randomName()}`;
 
       const params: S3Params = {
         Bucket: bucketName,
@@ -115,7 +115,7 @@ updateCourse = async (
 
       const command = new PutObjectCommand(params);
       await s3.send(command);
-      url = `https://eduwise.s3.ap-south-1.amazonaws.com/${imageName}`;
+      url = `https://instructor-data-bucket.s3.ap-south-1.amazonaws.com/${imageName}`;
     }
 
     body.benefits = JSON.parse(body.benefits);
@@ -334,6 +334,37 @@ addReview = async (req: CustomRequest, res: Response, next: NextFunction) => {
   }
 };
 
+editReview = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { reviewId } = req.params;
+    const { updatedReview, courseId } = req.body;
+    const userId = req.userId; 
+
+    const data = {
+      reviewId,
+      updatedReview,
+      courseId,
+      userId,
+    };
+
+    console.log("Edit Review Request Data:", data);
+    const operation = "edit-review";
+    const response: any = await CourseRabbitMQClient.produce(data, operation);
+    const resp = response.content.toString();
+    const jsonData = JSON.parse(resp);
+
+    console.log("Edited Review:", jsonData);
+    res.status(StatusCode.Ok).json(jsonData);
+  } catch (e: any) {
+    next(e);
+}
+};
+
+
 getNotifications = async (
   req: CustomRequest,
   res: Response,
@@ -341,6 +372,7 @@ getNotifications = async (
 ) => {
   try {
     const instructorId = req.params.id;
+    console.log("Instructor ID:", instructorId);
     const operation = "get-all-notifications";
     const response: any = await NotificationClient.produce(
       instructorId,
@@ -370,4 +402,18 @@ updateNotification = async (
     next(e);
   }
 };
+
+getCourseAnalytics = async(req:CustomRequest,res:Response,next:NextFunction) =>{
+  try {
+    const instructorId = req.params.id;
+    const operation = "course-analytics";
+    const response:any = await CourseRabbitMQClient.produce(
+      instructorId,operation
+    );
+    const result = JSON.parse(response.content.toString());
+    res.status(StatusCode.Ok).json(result);
+  } catch (e:any) {
+    next(e)
+  }
+}
 }

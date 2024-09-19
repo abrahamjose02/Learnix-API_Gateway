@@ -1,5 +1,6 @@
 import { Channel, Connection, connect } from "amqplib";
 import rabbitmqConfig from "../../config/rabbiMQ.config";
+
 import Producer from "./producer";
 import { EventEmitter } from 'events'
 import Consumer from "./consumer";
@@ -51,7 +52,7 @@ class RabbitMQClient{
             this.isInitialized = true;
 
         }catch(e: any){
-            console.log("RabbitMQ error");
+            throw new Error("rabbitmq error")
         }
     }
     async produce(data: any, operation: string) {

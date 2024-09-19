@@ -13,7 +13,7 @@ export default class Producer {
   async produceMessages(data: any, operation: string) {
     const uuid = randomUUID();
     this.channel.sendToQueue(
-      rabbitmqConfig.rabbitMQ.queues.courseQueue,
+      rabbitmqConfig.rabbitMQ.queues.notificationQueue,
       Buffer.from(JSON.stringify(data)),
       {
         replyTo: this.replyQueueName,

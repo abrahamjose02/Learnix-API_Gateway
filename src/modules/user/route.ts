@@ -22,6 +22,6 @@ userRoute.post('/update-user-avatar', isValidated, upload.single('avatar'), cont
 userRoute.post('/forgot-password',controller.forgotPassword);
 userRoute.post('/verify-reset-code',controller.verifyResetCode);
 userRoute.post('/reset-password',controller.resetPassword)
-
+userRoute.get('/get-users-analytics/:id',isValidated,controller.getUserAnalytics);
 
 export default userRoute;

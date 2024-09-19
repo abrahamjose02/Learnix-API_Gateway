@@ -31,8 +31,11 @@ courseRoute.get("/search-courses", controller.searchCourses);
 courseRoute.post('/add-question',isValidated, controller.addQuestion)
 courseRoute.post('/add-answer',isValidated, controller.addAnswer)
 courseRoute.post('/add-review',isValidated, controller.addReview)
+courseRoute.put('/edit-review/:reviewId',isValidated, controller.editReview);
 courseRoute.get('/get-all-notification/:id',isValidated, controller.getNotifications)
 courseRoute.get('/update-notification/:id',isValidated, controller.updateNotification)
 courseRoute.get("/get-user-courses", isValidated, controller.getUserCourses);
+courseRoute.get('/get-course-analytics/:id',isValidated,controller.getCourseAnalytics);
+
 
 export default courseRoute;

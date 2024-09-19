@@ -1,6 +1,6 @@
 
 import { StatusCode } from "../../interface/enum";
-import { Request,Response,NextFunction } from "express";
+import { Request,Response,NextFunction, response } from "express";
 import UserRabbitMQClient from './rabbitMQ/client';
 import { generateTokenOptions } from "../../utils/generateTokenOptions";
 import AuthRabbitMQClient from '../auth/rabbitMQ/client';
@@ -156,37 +156,59 @@ export default class UserController{
             res.status(StatusCode.BadGateway).json({success:false,message:error})
         }
     }
-    updateUserPassword = async(req:CustomRequest,res:Response,next:NextFunction)=>{
-        try {
-            const{oldPassword,newPassword} = req.body;
-            const userId = req.userId
-            const operation = 'update-password';
-            const response:any = await UserRabbitMQClient.produce({userId,oldPassword,newPassword},operation);
-            const result = JSON.parse(response.content.toString());
-            res.status(StatusCode.Created).json(result);
-        } catch (error) {
-            res.status(StatusCode.BadGateway).json({success:false,message:error})
-        }
-    }
-    updateUserAvatar = async(req:CustomRequest,res:Response,next:NextFunction)=>{
-        try {
-            const file = req.file;
-            const id = req.userId;
-            const operation = 'update-avatar'
-            const response:any = await UserRabbitMQClient.produce({
-                data:file?.buffer,
-                filename:file?.fieldname,
-                mimetype:file?.mimetype,
-                id,
-            },operation)
+    updateUserPassword = async (req: CustomRequest, res: Response, next: NextFunction) => {
+      try {
+          const { oldPassword, newPassword } = req.body;
+          const userId = req.userId;
+          const operation = 'update-password';
+  
+          const response: any = await UserRabbitMQClient.produce({ userId, oldPassword, newPassword }, operation);
+          const result = JSON.parse(response.content.toString());
+  
+          if (!result.success) {
+              return res.status(StatusCode.BadRequest)
+                        .json({ success: false, message: result.message });
+          }
+          return res.status(StatusCode.Created).json(result);
+  
+      } catch (error) {
+          return res.status(StatusCode.BadGateway).json({ success: false, message: error });
+      }
+  };
+  
+  updateUserAvatar = async (
+    req: CustomRequest,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const file = req.file;
+      const id = req.userId;
 
-            const result = JSON.parse(response.content.toString())
-            res.status(StatusCode.Created).json(result);
-            
-        } catch (error) {
-            res.status(StatusCode.BadGateway).json({success:false,message:error})
-        }
+      console.log("file",file)
+      console.log("id",req.userId)
+
+      const response: any = await UserRabbitMQClient.produce(
+        {
+          data: file?.buffer,
+          fieldname: file?.fieldname,
+          mimetype: file?.mimetype,
+          id,
+        },
+        "update-avatar"
+      );
+      const result = JSON.parse(response.content.toString());
+      console.log(result);
+      
+      if (result.success) {
+        res.status(StatusCode.Created).json(result);
+      } else {
+        res.status(StatusCode.BadRequest).json({ message: "Bad Request" });
+      }
+    } catch (e: any) {
+      next(e);
     }
+  };
     forgotPassword = async(req:Request,res:Response,next:NextFunction)=>{
         try {
             const operation = 'forgot-password'
@@ -228,5 +250,17 @@ export default class UserController{
         } catch (error) {
             res.status(StatusCode.BadGateway).json({success:false,message:error})
         }
+    }
+
+    getUserAnalytics = async(req:Request,res:Response,next:NextFunction) =>{
+      try {
+        const operation = "get-user-Analytics"
+        const instructorId = req.params.id;
+        const response:any = await UserRabbitMQClient.produce(instructorId,operation);
+        const result = JSON.parse(response.content.toString());
+        res.status(StatusCode.Created).json(result);
+      } catch (e:any) {
+        res.status(StatusCode.BadGateway).json({success:false})
+      }
     }
 }
