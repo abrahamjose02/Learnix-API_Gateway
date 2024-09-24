@@ -134,10 +134,13 @@ getOrderAnalytics = async(req:CustomRequest,res:Response,next:NextFunction)=>{
 getRevenueAnalytics = async (req: CustomRequest, res: Response, next: NextFunction) => {
   try {
     const instructorId = req.params.id;
+    console.log("instructorId",instructorId)
     const operation = "revenue-analytics";
 
     
     const response: any = await orderRabbitMQClient.produce(instructorId, operation);
+
+    console.log("response",response);
 
     
     const courseIds: string[] = response.map((item: RevenueData) => item.courseId);
@@ -157,7 +160,9 @@ getRevenueAnalytics = async (req: CustomRequest, res: Response, next: NextFuncti
     courseDetailsResponses.forEach((courseResponse: any) => {
       const courseDetails: CourseDetails = JSON.parse(courseResponse.content.toString());
 
-      console.log("Course Details:", courseDetails); // Log course details
+      console.log("courseDetails",courseDetails);
+
+      
 
       if (courseDetails._id && courseDetails.name) {
         courseIdToName[courseDetails._id] = courseDetails.name;
